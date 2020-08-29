@@ -36,3 +36,46 @@ $$(3)\text{ }f(x|\beta) = \frac{1}{\beta}e^{-x/\beta},\text{ }0\leq x \leq \inft
 
 ## Problem 3
 
+Objective: plot a scatter plot and histogram of any random R dataset
+
+1.) Look at all available R datasets (I chose Orange)
+
+2.) Read about the dataset and print it out to see what it looks like
+
+3.) Install ggplot2 and initalize library
+
+4.) Plot scatterplot & histogram with ggplot package - use google if you have issues
+
+## Problem 4
+```{r}
+# look at available R datasets
+# library(help="datasets")
+
+# assign stock data set Orange to data variable
+data = Orange
+
+# check out the data to see what we can plot
+print(data)
+
+# Read about the dataset
+# ?Orange
+```
+```{r}
+# install and load package ggplot2 if you did not already
+# install.packages("ggplot2")
+
+# initialize library
+library("ggplot2")
+
+# use ggplot package to create a scatterplot of age vs. circumference
+ggplot(data) +
+        geom_point(mapping = aes(x=age, y=circumference), color="blue")
+```
+
+```{r}
+# use ggplot package to create a histogram of ages of trees (days since 1968/12/31)
+ggplot(data) +
+        geom_histogram(mapping = aes(x=age), binwidth=50)
+```
+
+
