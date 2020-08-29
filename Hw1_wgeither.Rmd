@@ -9,22 +9,30 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Problem 1
+Primers Done
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Problem 2
+Saved to Github
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+a) I got my undergrad in mathematics with a minor in stats, so I had a fair amount of exopsure and use in R. For the past 2 years I worked as a Data Analyst at an Ad-tech company where I primarily used Python, SQL, and C#. That being said, in this class I would love to:
+ - Refamiliarize myself with linear regression & ANOVA in R
+ - Learn about parallel computing and how to connect to the university's supercomputer
+ - Learn about Monte Carlo procedures and Power as I'm not sure if this was covered in my undergrad curriculum
+ 
+ b)
+ 
+Binomial Distribution:
+ 
+$$(1)\text{ }P(X=x|n,p) = {{n}\choose{x}} \cdot p^x \cdot (1-p)^{n-x}; x=0,1,2,...,n;\text{ } 0\leq p\leq1$$
 
-```{r cars}
-summary(cars)
-```
+Discrete Uniform:
 
-## Including Plots
+$$(2)\text{ }P(X=x|N) = \frac{1}{N}; x=0,1,2,...,N;\text{ } N\in \mathbb{N}$$
 
-You can also embed plots, for example:
+Exponential Distribution:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+$$(3)\text{ }f(x|\beta) = \frac{1}{\beta}e^{-x/\beta},\text{ }0\leq x \leq \infty,\text{ } \beta > 0$$
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Problem 3
+
