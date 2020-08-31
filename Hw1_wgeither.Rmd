@@ -3,6 +3,8 @@ title: "HW1_wgeither"
 author: "Warren Geither"
 date: "8/29/2020"
 output: pdf_document
+header-includes:
+ - \usepackage{enumitem}
 ---
 
 ```{r setup, include=FALSE}
@@ -12,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Problem 1
 Primers Done
 
-## Problem 2
+## Problem 2 & 3
 Saved to Github
 
 a) I got my undergrad in mathematics with a minor in stats, so I had a fair amount of exopsure and use in R. For the past 2 years I worked as a Data Analyst at an Ad-tech company where I primarily used Python, SQL, and C#. That being said, in this class I would love to:
@@ -21,30 +23,25 @@ a) I got my undergrad in mathematics with a minor in stats, so I had a fair amou
  - Learn about Monte Carlo procedures and Power as I'm not sure if this was covered in my undergrad curriculum
  
  b)
- 
-Binomial Distribution:
- 
-$$(1)\text{ }P(X=x|n,p) = {{n}\choose{x}} \cdot p^x \cdot (1-p)^{n-x}; x=0,1,2,...,n;\text{ } 0\leq p\leq1$$
+\begin{align}
+\text{Binomial: }P(X=x|n,p) &= {{n}\choose{x}} \cdot p^x \cdot (1-p)^{n-x};    x=0,1,2,...,n;\text{ } 0\leq p\leq1 \\
+\text{Discrete Uniform: }P(X=x|N) &= \frac{1}{N}; x=0,1,2,...,N;\text{ } N\in \mathbb{N} \\
+\text{Exponential: }f(x|\beta) &= \frac{1}{\beta}e^{-x/\beta},\text{ }0\leq x \leq \infty,\text{ } \beta > 0
+\end{align}
 
-Discrete Uniform:
-
-$$(2)\text{ }P(X=x|N) = \frac{1}{N}; x=0,1,2,...,N;\text{ } N\in \mathbb{N}$$
-
-Exponential Distribution:
-
-$$(3)\text{ }f(x|\beta) = \frac{1}{\beta}e^{-x/\beta},\text{ }0\leq x \leq \infty,\text{ } \beta > 0$$
-
-## Problem 3
-
-Objective: plot a scatter plot and histogram of any random R dataset
-
-1.) Look at all available R datasets (I chose Orange)
-
-2.) Read about the dataset and print it out to see what it looks like
-
-3.) Install ggplot2 and initalize library
-
-4.) Plot scatterplot & histogram with ggplot package - use google if you have issues
+\textbf{Performing Reproducible Research}
+\begin{enumerate}
+\item For Every Result, Keep Track of How It Was Produced
+\item Avoid Manual Data Manipulation Steps
+\item Archive the Exact Versions of All External Programs Used
+\item Version Control All Custom Scripts
+\item Record All Intermediate Results, When Possible in Standardized Formats
+\item For Analyses That Include Randomness, Note Underlying Random Seeds
+\item Always Store Raw Data behind Plots
+\item Generate Hierarchical Analysis Output, Allowing Layers of Increasing Detail to Be Inspected
+\item Connect Textual Statements to Underlying Results
+\item Provide Public Access to Scripts, Runs, and Results
+\end{enumerate}
 
 ## Problem 4
 ```{r}
