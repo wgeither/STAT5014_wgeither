@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(curl)
 library(tidyverse)
+library(gapminder)
 ```
   
 ## Problem 3
@@ -18,51 +19,78 @@ In terms of team collaboration, version control seems like by far the best way t
 
 ## Problem 4
 
-In this exercise, you will import, munge, clean and summarize datasets from Wu and Hamada's _Experiments: Planning, Design and Analysis_ book you will use in the Spring.  For each dataset, you should perform the cleaning 2x: first with base R functions (ie no dplyr, piping, etc), second using tidyverse function.  Make sure you weave your code and text into a complete description of the process and end by creating a tidy dataset describing the variables, create a summary table of the data (summary, NOT full listing), note issues with the data, and include an informative plot.  
+a. The data is of sensory data from different operators. It currently has 2 columns and 31 rows, it looks like it should have 6 columns and 30 rows. It has data on 10 different items with 5 different operators. 
 
-a. Sensory data from five operators.  -- see video, I am doing this one
-<http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/Sensory.dat> 
 ```{r sensory_data_loading}
 url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/Sensory.dat"
 
-sensory_data <- fread(url, fill=TRUE, header=TRUE)
-saveRDS(sensory_data, "sensory_data_raw.RDS")
+#sensory_data <- fread(url, fill=TRUE, header=TRUE)
+#saveRDS(sensory_data, "sensory_data_raw.RDS")
 sensory_df <- readRDS("sensory_data_raw.RDS")
 ```
-Looks like data has 2 columns and 31 rows, it should have 6 columns. 
 
+First we'll clean it using base R.
 ```{r sensory_data_cleaning_base_R}
 # delete first row
-sensory_df <- sensory_df[2:nrow(sensory_df)]
+base_r_sensory_df <- sensory_df[2:nrow(sensory_df)]
 
 # delete na column
-sensory_df <- sensory_df[, 1]
+base_r_sensory_df <- base_r_sensory_df[, 1]
 
 # split up values into multiple columns
+
+# create a function so we can just take the right values
 right = function(x,n){
   substring(x,nchar(x)-n+1)
 }
 
-out <- strsplit(right(as.character(sensory_df$V1),19),' ') 
-test_df <- data.frame(do.call(rbind, out))
+string_list <- strsplit(right(as.character(base_r_sensory_df$V1),19),' ')
+
+base_r_sensory_df <- data.frame(do.call(rbind, string_list))
 
 # rename columns
-colnames(test_df) <- c("Op_1", "Op_2", "Op_3", "Op_4", "Op_5")
+colnames(base_r_sensory_df) <- c("Op_1", "Op_2", "Op_3", "Op_4", "Op_5")
 
 # create dataframe of item numbers
 item_df <- data.frame("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10))
 
 # bind item numbers on our other dataframe
-new_df <- cbind(test_df,item_df)
+tidy_base_r_sensory_df <- cbind(base_r_sensory_df,item_df)
 
 # re-order columns
-tidy_sensory_df <- new_df[,c(6,1,3,2,4,5)]
+tidy_base_r_sensory_df <- tidy_base_r_sensory_df[,c(6,1,3,2,4,5)]
+
+#  Show summary of tidy data table
+knitr::kable(tidy_base_r_sensory_df[1:5,])
+
+#informative plot
 
 ```
-b. Gold Medal performance for Olympic Men's Long Jump, year is coded as 1900=0.
-<http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/LongJumpData.dat>
 
-Looks like this data has way too many columns. We need to combine all data together into 2 columns "Year" and "Long Jump"
+Now we'll do the same operations using tidyverse functions
+```{r sensory_data_cleaning_tidyverse}
+# remove first row
+tidyverse_sensory_df <- slice(sensory_df[2:31])
+
+# Remove column full of na's
+tidyverse_sensory_df <- select(tidyverse_sensory_df, -Operator)
+
+# seperate values
+tidyverse_sensory_df <- tidyverse_sensory_df %>%
+                          separate(col=V1,into=c("Item", "Op_1", "Op_2", "Op_3", "Op_4", "Op_5"), sep=" ", fill="left")
+
+# remove first column since its missing values
+tidyverse_sensory_df <- select(tidyverse_sensory_df, -Item)
+
+# add item column
+tidy_tidyverse_sensory_df <- tidyverse_sensory_df %>%
+                                add_column("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10), .before = "Op_1")
+
+# show tidy data
+knitr::kable(tidy_tidyverse_sensory_df[1:5,])
+```
+
+b. The data is year and Long jump performance of gold medalists. Looks like the year and longjump columns are broken up into multiple columns. We need to combine all data together into 2 columns "Year" and "Long Jump"
 
 ```{r load_data}
 # read in url
@@ -72,13 +100,10 @@ url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/LongJumpData.dat"
 #olympic_data <- fread(url, fill=TRUE, header=TRUE)
 #saveRDS(olympic_data, "olympic_data_raw.RDS")
 olympic_df <- readRDS("olympic_data_raw.RDS")
-
 ```
 
+First we'll tidy the data using base r
 ```{r tidy_olympic_data_base_r}
-# tried stack, not working so moving on with other method for now
-#tidy_olympic_df <- data.frame(stack(olympic_df[c(1,3,5,7)]), stack(olympic_df[c(2,4,6,8)]))
-                              
 # partition data into separate 2 column data frames
 partition1_df = as.data.frame(olympic_df[,  1:2])
 partition2_df = as.data.frame(olympic_df[,  3:4])
@@ -86,25 +111,50 @@ partition3_df = as.data.frame(olympic_df[,  5:6])
 partition4_df = as.data.frame(olympic_df[,  7:8])
 
 # rename columns
-colnames(partition1_df) <- c("Year","Long Jump")
-colnames(partition2_df) <- c("Year","Long Jump")
-colnames(partition3_df) <- c("Year","Long Jump")
-colnames(partition4_df) <- c("Year","Long Jump")
+colnames(partition1_df) <- c("Year","Long_Jump")
+colnames(partition2_df) <- c("Year","Long_Jump")
+colnames(partition3_df) <- c("Year","Long_Jump")
+colnames(partition4_df) <- c("Year","Long_Jump")
 
 # remove NA values 
 partition4_df = partition4_df[complete.cases(partition4_df), ]
 
 # concate all dataframes together
 tidy_olympic_df = rbind(partition1_df,partition2_df,partition3_df,partition4_df)
+
+# show tidy data
+knitr::kable(tidy_olympic_df[1:5,])
+
+# informative plot
+ggplot(data=tidy_olympic_df, aes(x=Year, y=Long_Jump)) +
+  geom_bar(stat="identity")
 ```
 
+Again, using tidyverse.
 ```{r tidy_olympic_data_tidyverse}
+# so we make sure we are just working in this cell
+tidverse_olympic_df <- olympic_df
 
+# I was getting a names must be unique error, so I need to rename the columns first
+colnames(tidverse_olympic_df) <- c("Year_1", "Jump_1", "Year_2", "Jump_2", "Year_3", "Jump_3", "Year_4", "Jump_4", "nacol1", "nacol2", "nacol3", "nacol4" )
+
+# select just the populated columns
+tidverse_olympic_df <- select(tidverse_olympic_df, 1:8)
+
+# gather all the year values into one column
+olympic_year_df <- tidverse_olympic_df %>% gather(key="na", value="Year", "Year_1","Year_2", "Year_3", "Year_4") %>% select("Year")
+
+# gather all the jump values into one column
+olympic_jump_df <- tidverse_olympic_df %>% gather(key="na", value="Jump", "Jump_1","Jump_2", "Jump_3", "Jump_4") %>% select("Jump")
+
+# bind the columns together in a new dataframe
+tidy_tidyverse_olympic_df <- bind_cols(olympic_year_df, olympic_jump_df)
+
+# show tidy data
+knitr::kable(tidy_tidyverse_olympic_df[1:5,])
 ```
 
-c. Brain weight (g) and body weight (kg) for 62 species.    
-<http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/BrainandBodyWeight.dat>
-
+c. This data has Brain weight (g) and body weight (kg) for 62 species. It seems to have a similar problem as the previous datasets with alternating columns needing concated together. Also has 6 Na columns at the end
 ```{r load_brain_data}
 # read in url
 url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/BrainandBodyWeight.dat"
@@ -113,21 +163,19 @@ url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/BrainandBodyWeight
 #brain_data <- fread(url, fill=TRUE, header=TRUE)
 #saveRDS(brain_data, "brain_data_raw.RDS")
 brain_df <- readRDS("brain_data_raw.RDS")
-
 ```
 
+Cleaning using Base R
 ```{r tidy_brain_data_base_r}
-# tried stack, not working so moving on with other method for now
-                              
 # partition data into separate 2 column data frames
 partition1_df = as.data.frame(brain_df[,  1:2])
 partition2_df = as.data.frame(brain_df[,  3:4])
 partition3_df = as.data.frame(brain_df[,  5:6])
 
 # rename columns
-colnames(partition1_df) <- c("Body Wt(kg)","Brain Weight(g)")
-colnames(partition2_df) <- c("Body Wt(kg)","Brain Weight(g)")
-colnames(partition3_df) <- c("Body Wt(kg)","Brain Weight(g)")
+colnames(partition1_df) <- c("Body_Weight_kg","Brain_Weight_g")
+colnames(partition2_df) <- c("Body_Weight_kg","Brain_Weight_g")
+colnames(partition3_df) <- c("Body_Weight_kg","Brain_Weight_g")
 
 # remove NA values 
 partition3_df = partition3_df[complete.cases(partition3_df), ]
@@ -135,51 +183,114 @@ partition3_df = partition3_df[complete.cases(partition3_df), ]
 # concate all dataframes together
 tidy_brain_df = rbind(partition1_df,partition2_df,partition3_df)
 
-```
+# show tidy data
+knitr::kable(tidy_brain_df[1:5,])
 
-d. Triplicate measurements of tomato yield for two varieties of tomatos at three planting densities.  
-<http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/tomato.dat>
+# informative plot
+
+# take some of the noise out to get a cleaner plot
+clean_brain_df <- filter(tidy_brain_df, Body_Weight_kg<2000)
+
+# create a scatterplot
+ggplot(clean_brain_df, aes(x=Body_Weight_kg, y=Brain_Weight_g)) + geom_point()
+```
+Cleaning using Tidy_verse
+```{r tidyverse_brain_data}
+# so we make sure we are just working in this cell
+tidverse_brain_df <- brain_df
+
+# I was getting a names must be unique error, so I need to rename the columns first
+colnames(tidverse_brain_df) <- c("Body_1", "Brain_1", "Body_2", "Brain_2", "Body_3", "Brain_3", "nacol", "nacol", "nacol1", "nacol2", "nacol3", "nacol4" )
+
+# select just the populated columns
+tidverse_brain_df <- select(tidverse_brain_df, 1:6)
+
+# gather all the year values into one column
+body_wt_df <- tidverse_brain_df %>% gather(key="na", value="Body Weight(kg)", "Body_1","Body_2", "Body_3") %>% select("Body Weight(kg)")
+
+# gather all the jump values into one column
+brain_wt_df <- tidverse_brain_df %>% gather(key="na", value="Brain Weight(g)", "Brain_1","Brain_2", "Brain_3") %>% select("Brain Weight(g)")
+
+# bind the columns together in a new dataframe
+tidy_tidyverse_brain_df <- bind_cols(body_wt_df, brain_wt_df)
+
+# show tidy data
+knitr::kable(tidy_tidyverse_brain_df[1:5,])
+```
+d. Triplicate measurements of tomato yield for two varieties of tomatos at three planting densities. The column title are in the first row, there are 2 columns of NA values. and cells have 3 values each inside of them. We need to transform it so that each value has its own cell. I've named the columns "pd_1000" meaning plant density 1000
 
 ```{r load_tomato}
 # read in url
 url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/tomato.dat"
 
 # save to rds so we are reslient against changes on the internet
-tomato_data <- fread(url, fill=TRUE, header=TRUE)
-saveRDS(tomato_data, "tomato_data_raw.RDS")
+#tomato_data <- fread(url, fill=TRUE, header=TRUE)
+#saveRDS(tomato_data, "tomato_data_raw.RDS")
 tomato_df <- readRDS("tomato_data_raw.RDS")
 
 ```
 
+Cleaning using Base R.
+
 ```{r tidy_tomato_data_base_r}
 
 # remove NA columns
-tomato_df <- as.data.frame(tomato_df[,1:4])
+base_r_tomato_df <- as.data.frame(tomato_df[,1:4])
 
 # remove first row, since its actually the column names
-tomato_df <- as.data.frame(tomato_df[2:3,])
+base_r_tomato_df <- as.data.frame(base_r_tomato_df[2:3,])
 
 # rename columns
-colnames(tomato_df) <- c("Tomato_Variety","pd_1000","pd_2000","pd_3000")
+colnames(base_r_tomato_df) <- c("Tomato_Variety","pd_1000","pd_2000","pd_3000")
 
-# split up Triplicate measurements in the cell into 3 columns
-out <- strsplit(as.character(tomato_df$pd_1000),',') 
-partition1_df <- data.frame(tomato_df$Tomato_Variety, do.call(rbind, out))
+# split up Triplicate measurements in the cell into 3 separate rows
 
-out <- strsplit(as.character(tomato_df$pd_2000),',') 
-partition2_df <- data.frame(tomato_df$Tomato_Variety, do.call(rbind, out))
+string_list_1 <- strsplit(base_r_tomato_df$pd_1000, split = ",")
+pd_1000_df <- data.frame(Tomato_Variety = rep(base_r_tomato_df$Tomato_Variety, sapply(string_list_1, length)), pd_1000 = unlist(string_list_1))
 
-out <- strsplit(as.character(tomato_df$pd_3000),',') 
-partition3_df <- data.frame(tomato_df$Tomato_Variety, do.call(rbind, out))
+string_list_2 <- strsplit(base_r_tomato_df$pd_2000, split = ",")
+pd_2000_df <- data.frame(pd_2000 = unlist(string_list_2))
+
+string_list_3 <- strsplit(base_r_tomato_df$pd_3000, split = ",")
+pd_3000_df <- data.frame(pd_3000 = unlist(string_list_3))
+
+# bind columns together
+tidy_base_r_tomato_df <- cbind(pd_1000_df, pd_2000_df, pd_3000_df)
+
+# show tidy data
+knitr::kable(tidy_base_r_tomato_df[1:5,])
+```
+
+Now with Tidyverse functions
+```{r tidyverse_tomato_data}
+# remove NA columns
+tidyverse_tomato_df <- select(tomato_df, 1:4)
+
+# remove first row, since its actually the column names
+tidyverse_tomato_df <- slice(tidyverse_tomato_df[2:3])
 
 # rename columns
-colnames(partition1_df) <- c("Tomato_Variety","pd_1000_m1","pd_1000_m2","pd_1000_m3")   
-colnames(partition2_df) <- c("Tomato_Variety","pd_2000_m1","pd_2000_m2","pd_2000_m3")
-colnames(partition3_df) <- c("Tomato_Variety","pd_3000_m1","pd_3000_m2","pd_3000_m3")
+colnames(tidyverse_tomato_df) <- c("Tomato_Variety","pd_1000","pd_2000","pd_3000")
 
-# merge data frames
-one_and_two_merge_df <- merge(partition1_df,partition2_df,by="Tomato_Variety")
-tidy_tomato_df <- merge(one_and_two_merge_df,partition3_df,by="Tomato_Variety")
+# separate values into rows, I was having trouble with this function, so need to use it 3 times
+partition_1_df <- tidyverse_tomato_df %>%
+                              separate_rows(pd_1000)  %>%
+                              slice(1:6) %>%
+                              select(1:2)
+
+partition_2_df <- tidyverse_tomato_df %>%
+                              separate_rows(pd_2000)  %>%
+                              select(3)
+
+partition_3_df <- tidyverse_tomato_df %>%
+                              separate_rows(pd_3000)  %>%
+                              select(4)
+
+# bind the columns, tidyverse style
+tidy_tidyverse_tomato_df <- bind_cols(partition_1_df, partition_2_df, partition_3_df)
+
+# show tidy data
+knitr::kable(tidy_tidyverse_tomato_df[1:5,])
 ```
 ## Problem 5
 
