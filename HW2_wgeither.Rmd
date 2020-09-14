@@ -292,13 +292,3 @@ tidy_tidyverse_tomato_df <- bind_cols(partition_1_df, partition_2_df, partition_
 # show tidy data
 knitr::kable(tidy_tidyverse_tomato_df[1:5,])
 ```
-## Problem 5
-
-Finish this homework by pushing your changes to your repo.  In general, your workflow for this should be:  
-
-1. git pull -- to make sure you have the most recent repo  
-2. In R: do some work  
-3. git add -- this tells git to track new files  
-4. git commit -- make message INFORMATIVE and USEFUL  
-5. git push -- this pushes your local changes to the repo  
-
