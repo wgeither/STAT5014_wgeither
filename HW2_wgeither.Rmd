@@ -52,7 +52,8 @@ base_r_sensory_df <- data.frame(do.call(rbind, string_list))
 colnames(base_r_sensory_df) <- c("Op_1", "Op_2", "Op_3", "Op_4", "Op_5")
 
 # create dataframe of item numbers
-item_df <- data.frame("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10))
+item_df <- data.frame("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4
+                                 ,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10))
 
 # bind item numbers on our other dataframe
 base_r_sensory_df <- cbind(base_r_sensory_df,item_df)
@@ -78,7 +79,9 @@ partition_df_5 <- as.data.frame(cbind(Item=base_r_sensory_df[,1],
                                  value=base_r_sensory_df[,6],
                                  Operator = c(rep(5,30))))
 
-tidy_base_r_sensory_df <- rbind(partition_df_1,partition_df_2,partition_df_3,partition_df_4,partition_df_5)
+# bind new partiions together
+tidy_base_r_sensory_df <- rbind(partition_df_1,partition_df_2
+                                ,partition_df_3,partition_df_4,partition_df_5)
 
 #  Show summary of tidy data table
 knitr::kable(tidy_base_r_sensory_df[1:5,])
@@ -104,17 +107,25 @@ tidyverse_sensory_df <- select(tidyverse_sensory_df, -Operator)
 
 # seperate values
 tidyverse_sensory_df <- tidyverse_sensory_df %>%
-                          separate(col=V1,into=c("Item", "1", "2", "3", "4", "5"), sep=" ", fill="left")
+                          separate(col=V1
+                                   ,into=c("Item", "1", "2", "3", "4", "5")
+                                   , sep=" "
+                                   , fill="left")
 
 # remove first column since its missing values
 tidyverse_sensory_df <- select(tidyverse_sensory_df, -Item)
 
 # add item column
 tidyverse_sensory_df <- tidyverse_sensory_df %>%
-                                add_column("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10), .before = "1")
+                                add_column("Item" = c(1,1,1,2,2,2,3,3,3,4,4,4
+                                                      ,5,5,5,6,6,6,7,7,7,8,8,8
+                                                      ,9,9,9,10,10,10)
+                                           , .before = "1")
 
 # gather all the year values into one column
-tidy_tidyverse_sensory_df <- tidyverse_sensory_df %>% gather(key="Operator", value="Value", "1","2", "3", "4", "5") 
+tidy_tidyverse_sensory_df <- tidyverse_sensory_df %>% gather(key="Operator"
+                                                             , value="Value", "1","2"
+                                                             , "3", "4", "5") 
 
 # show tidy data
 knitr::kable(tidy_tidyverse_sensory_df[1:5,])
@@ -166,16 +177,27 @@ Again, using tidyverse.
 tidverse_olympic_df <- olympic_df
 
 # I was getting a names must be unique error, so I need to rename the columns first
-colnames(tidverse_olympic_df) <- c("Year_1", "Jump_1", "Year_2", "Jump_2", "Year_3", "Jump_3", "Year_4", "Jump_4", "nacol1", "nacol2", "nacol3", "nacol4" )
+colnames(tidverse_olympic_df) <- c("Year_1", "Jump_1", "Year_2"
+                                   , "Jump_2", "Year_3", "Jump_3"
+                                   , "Year_4", "Jump_4", "nacol1"
+                                   , "nacol2", "nacol3", "nacol4" )
 
 # select just the populated columns
 tidverse_olympic_df <- select(tidverse_olympic_df, 1:8)
 
 # gather all the year values into one column
-olympic_year_df <- tidverse_olympic_df %>% gather(key="na", value="Year", "Year_1","Year_2", "Year_3", "Year_4") %>% select("Year")
+olympic_year_df <- tidverse_olympic_df %>% gather(key="na"
+                                                  , value="Year"
+                                                  , "Year_1","Year_2"
+                                                  , "Year_3", "Year_4") %>% 
+                                          select("Year")
 
 # gather all the jump values into one column
-olympic_jump_df <- tidverse_olympic_df %>% gather(key="na", value="Jump", "Jump_1","Jump_2", "Jump_3", "Jump_4") %>% select("Jump")
+olympic_jump_df <- tidverse_olympic_df %>% gather(key="na",
+                                                  value="Jump",
+                                                  "Jump_1","Jump_2",
+                                                  "Jump_3", "Jump_4") %>%
+                                          select("Jump")
 
 # bind the columns together in a new dataframe
 tidy_tidyverse_olympic_df <- bind_cols(olympic_year_df, olympic_jump_df)
@@ -233,16 +255,27 @@ Cleaning using Tidy_verse
 tidverse_brain_df <- brain_df
 
 # I was getting a names must be unique error, so I need to rename the columns first
-colnames(tidverse_brain_df) <- c("Body_1", "Brain_1", "Body_2", "Brain_2", "Body_3", "Brain_3", "nacol", "nacol", "nacol1", "nacol2", "nacol3", "nacol4" )
+colnames(tidverse_brain_df) <- c("Body_1", "Brain_1", "Body_2"
+                                 , "Brain_2", "Body_3", "Brain_3"
+                                 , "nacol", "nacol", "nacol1"
+                                 , "nacol2", "nacol3", "nacol4" )
 
 # select just the populated columns
 tidverse_brain_df <- select(tidverse_brain_df, 1:6)
 
 # gather all the year values into one column
-body_wt_df <- tidverse_brain_df %>% gather(key="na", value="Body Weight(kg)", "Body_1","Body_2", "Body_3") %>% select("Body Weight(kg)")
+body_wt_df <- tidverse_brain_df %>% gather(key="na"
+                                           , value="Body Weight(kg)"
+                                           , "Body_1","Body_2"
+                                           , "Body_3") %>%
+                                    select("Body Weight(kg)")
 
 # gather all the jump values into one column
-brain_wt_df <- tidverse_brain_df %>% gather(key="na", value="Brain Weight(g)", "Brain_1","Brain_2", "Brain_3") %>% select("Brain Weight(g)")
+brain_wt_df <- tidverse_brain_df %>% gather(key="na"
+                                            , value="Brain Weight(g)"
+                                            , "Brain_1","Brain_2"
+                                            , "Brain_3") %>% 
+                                    select("Brain Weight(g)")
 
 # bind the columns together in a new dataframe
 tidy_tidyverse_brain_df <- bind_cols(body_wt_df, brain_wt_df)
@@ -279,7 +312,9 @@ colnames(base_r_tomato_df) <- c("Tomato_Variety","pd_1000","pd_2000","pd_3000")
 # split up Triplicate measurements in the cell into 3 separate rows
 
 string_list_1 <- strsplit(base_r_tomato_df$pd_1000, split = ",")
-pd_1000_df <- data.frame(Tomato_Variety = rep(base_r_tomato_df$Tomato_Variety, sapply(string_list_1, length)), pd_1000 = unlist(string_list_1))
+pd_1000_df <- data.frame(Tomato_Variety = rep(base_r_tomato_df$Tomato_Variety
+                                              , sapply(string_list_1, length))
+                                              , pd_1000 = unlist(string_list_1))
 
 string_list_2 <- strsplit(base_r_tomato_df$pd_2000, split = ",")
 pd_2000_df <- data.frame(pd_2000 = unlist(string_list_2))
@@ -290,6 +325,7 @@ pd_3000_df <- data.frame(pd_3000 = unlist(string_list_3))
 # bind columns together
 base_r_tomato_df <- cbind(pd_1000_df, pd_2000_df, pd_3000_df)
 
+# partition data and create new plant density column
 partition_df_1 <- as.data.frame(cbind(Tomato_Variety=base_r_tomato_df[,1], 
                                  Trip_Measurement=base_r_tomato_df[,2], 
                                  Plant_Density = c(rep(1000,6))))
@@ -335,7 +371,9 @@ partition_3_df <- tidyverse_tomato_df %>%
 tidyverse_tomato_df <- bind_cols(partition_1_df, partition_2_df, partition_3_df)
 
 # gather all the year values into one column
-tidy_tidyverse_tomato_df <- tidyverse_tomato_df %>% gather(key="Plant_Density", value="Trip_Measurement", "1000","2000", "3000") 
+tidy_tidyverse_tomato_df <- tidyverse_tomato_df %>% gather(key="Plant_Density"
+                                                           , value="Trip_Measurement"
+                                                           , "1000","2000", "3000") 
 
 # show tidy data
 knitr::kable(tidy_tidyverse_tomato_df[1:5,])
