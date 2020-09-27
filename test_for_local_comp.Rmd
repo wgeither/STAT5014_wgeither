@@ -1,0 +1,14 @@
+---
+title: "Test"
+author: "Warren Geither"
+date: "9/23/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Testing to see if i can push from my local computer
