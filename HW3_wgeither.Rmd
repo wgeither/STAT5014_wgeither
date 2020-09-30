@@ -9,171 +9,230 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(curl)
+library(ggplot2)
+library(microbenchmark)
+library(tidyverse)
 ```
 
-For each assignment, turn in by the due date/time.  Late assignments must be arranged prior to submission.  In every case, assignments are to be typed neatly using proper English in Markdown.  
-
-The last couple of weeks, we spoke about R, version control and Reproducible Research, munging and 'tidying' data, good programming practice, some basic programming building blocs, and finally matrix/vector operations.  In this homework, we will put this all together and actually analyze some data.  Remember to adhere to both Reproducible Research and Good Programming Practices, ie describe what you are doing and comment/indent code where necessary.  
-
-## Problem 1
-
-In the "Getting and Cleaning Data" lesson set, you should be comfortable with lessons 1-3.  Work through the "R Programming E" lesson as you see fit.  Lessons 1-9 and 15 are ones you should consider paying special attention to.  If you prefer the Rstudio.cloud Primers, the Primer on "Write Functions" is well done.   
-
-From the R command prompt:  
-```{r eval=FALSE}
-library(swirl)  
-install_course("R_Programming_E")
-install_course("Getting_and_Cleaning_Data")
-install_course("Exploratory_Data_Analysis")
-swirl()  
-```
-
-  
 ## Problem 3
 
-In the lecture, there were two links to programming style guides.  What is your takeaway from this and what specifically are _you_ going to do to improve your coding style?  
+I already practice alot of the style tips presented. However I can start
+to always use double quotes to denote character vectors. 
+Since I always used single quotes in python. 
 
-## Problem 4
-
-Good programming practices start with this homework.  In the last homework, you imported, munged, cleaned and summarized datasets from Wu and Hamada's _Experiments: Planning, Design and Analysis_.  
 
 ## Problem 5
 
-A situation you may encounter is a data set where you need to create a summary statistic for each observation type.  Sometimes, this type of redundancy is perfect for a function.  Here, we need to create a single function which takes as input a two column dataframe and returns a vector containing
-
-1. mean of column 1
-2. mean of column 2
-3. standard dev of column 1
-4. standard dev of column 2
-5. correlation between column 1 and 2
-
-I will look at the code and comment on it, so make it NICE!!  
-
-We will use this function to summarize a dataset which has multiple repeated measurements from two devices (dev1 and dev2) by thirteen Observers.  This file is preformatted as an R object, so it will read in nicely. "".  Please load the file (?readRDS -- really nice format for storing data objects), loop through the Observers collecting the summary statistics via your function for each Observer separately and store in a single dataframe.
-
-
-The output of this problem should be:
-
-a. A single table of the means, sd, and correlation for each of the 13 Observers (*?kable*).  From this table, what would you conclude?  You can easily check your result using dplyr's group_by and summarize.    
-b. A box plot of dev, by Observer (*?boxplot*).  From these plots, what would you conclude?  
-c. A violin plot of dev by Observer (*??violin* two "?" will search through installed packages).  From these plots, what would you conclude?  Compared to the boxplot and summary statistics, thoughts?  
- 
-Now that you have made some conclusions and decided what your analysis may look like, you decide to make one more plot:  
-
-d. a scatter plot of the data using ggplot, geom_points, and add facet_wrap on Observer.  For instance: `ggplot(df, aes(x=dev1,y=dev2)) + geom_point() + facet_wrap(Observer~.)`
-
-What do you see?  Combining the scatter plot with the summary statistics, what is the lesson here?  As you approach data analysis, what things should you do in the "Exploratory Data Analysis" portion of a project to avoid embarrassment from making erroneos conclusions?
-
+a.) I can conclude that they have approximately 
+    the same mean, variance, and coorelation
 ```{r}
-url <- "https://raw.github.com/rsettlage/STAT_5014_Fall_2020/blob/master/homework/HW3_data.rds"
+# load in file from working directory
+hw3_data_df <- readRDS("HW3_data (2).rds")
 
-download.file(url, "hw3_data_file.RDS", method="curl")
-
-test_df <- readRDS("hw3_data_file.RDS")
-
-HW3_data
-
+# create function
 summarize_dataframe <- function(x){
-                        mean_summary <- aggregate(x[, 2:3], list(x[,1]), mean)
-                        
-                        stdev_summary <- aggregate(x[, 2:3], list(x[,1]), sd)
-                        
-                        cor_summary <- x %>%
-                                    group_by(x[,1]) %>%
-                              summarize(cor=cor(x[,2],x[,3]))
-                                    return(summary)
+  
+  # group up by the first column and calculate means of col 2 & 3
+  mean_summary <- x %>%
+                    group_by(x[,1]) %>%
+                    summarize(mean_1 = mean(x[,2]),mean_2 = mean(x[,3]))
+  
+  # same group by first except calc standard deviation for 2&3                      
+  stdev_summary <- x %>%
+                    group_by(x[,1]) %>%
+                    summarize(std_1 = sd(x[,2]),std_2 = sd(x[,3]))
+  
+  # same except calculating covariance                    
+  cor_summary <- x %>%
+                  group_by(x[,1]) %>%
+                  summarize(cor=cor(x[,2],x[,3]))
+  
+  # binding all summaries together be suring not to repeat our first col                  
+  summary <- cbind(mean_summary
+                   ,stdev_summary[,2:3]
+                   ,cor_summary[2])
+  
+  # return final summary
+  return(summary)
 }
 
-summarize_dataframe <- function(x){
-                        mean_summary <- x %>%
-                                      group_by(x[,1]) %>%
-                              summarize(mean_1 = mean(x[,2]),
-                                        mean_2 = mean(x[,3]))
-                        
-                        stdev_summary <- x %>%
-                                      group_by(x[,1]) %>%
-                              summarize(std_1 = sd(x[,2]),
-                                        std_2 = sd(x[,3]))
-                        
-                        cor_summary <- x %>%
-                                    group_by(x[,1]) %>%
-                              summarize(cor=cor(x[,2],x[,3]))
-                        
-                        summary <- cbind(mean_summary,stdev_summary,cor_summary)
-                                    return(summary)
-                                  }
-summarize_dataframe(HW3_data)
+# store result in dataframe
+summary_df <- summarize_dataframe(hw3_data_df)
 
-# base r solution
-mean_summary <- aggregate(HW3_data[, 2:3], list(HW3_data[,1]), mean)
-
-stdev_summary <- aggregate(HW3_data[, 2:3], list(HW3_data[,1]), cor)
-?aggregate()
-
-# tidyverse solution
-summary <- HW3_data %>%
-            group_by(Observer) %>%
-            summarize(mean_1=sd(HW3_data[,3]),
-                      mean_2 = sd(HW3_data[,2]))
-
-summary <- HW3_data %>%
-            group_by(Observer) %>%
-            summarize(cor=cor(HW3_data[,2],HW3_data[,3]))
-?summarise_at()
-summary(HW3_data)
-
-C <- matrix(1:9 + rnorm(900,0,1e-3),ncol=30)
-class(colMeans(HW3_data))
-cl
-ones <- rep(1,30)
-t(ones) %*% C /30
-?readRDS()
+# create knitr table, conclude that they are all pretty much the same
+knitr::kable(summary_df)
 ```
+
+b.) I can conclude that I'm not insane, the data look very similar in terms 
+of those values.
+```{r boxplots}
+# set window
+par(mfrow=c(1,2))
+
+# device 1 boxplot
+boxplot(dev1~Observer
+        , data=hw3_data_df
+        , main="Dev1 By Observer"
+        , xlab="Observer"
+        , ylab="Dev1_values")
+
+# device 2 boxplot
+boxplot(dev2~Observer
+        , data=hw3_data_df
+        , main="Dev2 By Observer"
+        , xlab="Observer",
+        ylab="Dev2_values")
+```
+
+c.) Looking back and forth at both the violin plots, there seems to definitely
+   be a difference density at certain points
+```{r violin_plot}
+# change column to factor column
+modified_hw3_data_df <- hw3_data_df
+modified_hw3_data_df$Observer <- as.factor(modified_hw3_data_df$Observer)
+
+# graph violin plots
+plot_1 <- ggplot(modified_hw3_data_df, aes(x=Observer, y=dev1, color=Observer)) + 
+            geom_violin() +
+            scale_x_discrete(limits=c(1:12)) +
+            ggtitle("Observer By Dev1") +
+            labs(y="Dev1", x="Observer")
+
+plot_2 <- ggplot(modified_hw3_data_df, aes(x=Observer, y=dev2, color=Observer)) + 
+            geom_violin() +
+            scale_x_discrete(limits=c(1:12)) +
+            ggtitle("Observer By Dev2") +
+            labs(y="Dev2", x="Observer")
+
+# print plot 1
+plot_1
+
+# print plot 2
+plot_2
+```
+d.) LOL! Always make sure to look at the data from all angles.
+```{r scatterplots}
+ggplot(hw3_data_df, aes(x=dev1,y=dev2)) + geom_point() + facet_wrap(Observer~.)
+```
+
 ## Problem 6 
 
-Some numerical methods are perfect candidates for funtions.  Create a function that uses Reimann sums to approximate the integral:
+```{r riemann_approx}
+# initialize value for function/loop
+sum_val2 = 0
 
-\begin{equation*}
-f(x) = \int_0^1 e^{-\frac{x^2}{2}}
-\end{equation*}
+# create function to approximate integral
+integral_approx_function <- function(x) {
+  
+    # loop to get the left rienamm heights and sum them
+    for (i in 0:x-1) {
+      # input i into function
+      sum_val <- exp(-((1/i)^2)/2)
+      
+      # sum the i's together
+      sum_val2 <- sum_val + sum_val2
+      }
+  
+    # muliple by the width of the boxes so we have the total area
+    value <- (1/x) * sum_val2
+    return(value)
+}
 
-The function should include as an argument the width of the slices used.  Now use a looping construct (for or while) to loop through possible slice widths.  Report the various slice widths used, the sum calculated, and the slice width necessary to obtain an answer within $1e^{-6}$ of the analytical solution.
+# solution is actually sqrt(2pi), just using one though.
+numerical_approx <- 1
 
-Note: use good programming practices.  For help on Reimann sums:  
-<https://www.khanacademy.org/math/ap-calculus-ab/ab-integration-new/ab-6-2/a/left-and-right-riemann-sums>
+# initialize other variables
+rieman_sum <- 0
+delta <- numerical_approx - rieman_sum
+j <- 0
 
+# loop through possible values
+while (delta > 0.000001){
+  # plug j into function
+  rieman_sum <- integral_approx_function(j)
+  
+  # print our values
+  print(paste0("Slices being used: ", j))
+  print(paste0("Sum calculated: ", rieman_sum))
+  
+  # increment j
+  j <- j + 100000
+  
+  # find the delta
+  delta <- abs(numerical_approx - rieman_sum)
+}
+
+```
 ## Problem 7
 
-Create a function to find solutions to (1) using Newton's method.  The answer should include the solutions with tolerance used to terminate the loop, the interval used, and a plot showing the iterations on the path to the solution.
+```{r newtons_method}
+# create function for newtons method
+newtons_method_func <- function(x){
+  
+  # input the equation
+  eq <- (3^x) - sin(x) + cos(5*x)
+  
+  # store the derivative
+  derivative_eq <- -5*sin(5*x)-cos(x)+log(3)*3^x
+  
+  # calculate the next term
+  x_n1 <- x - (eq/derivative_eq)
+  
+  return(x_n1)
+}
 
-\begin{equation}
-f(x) = 3^x - sin(x) + cos(5x)
-\end{equation}
+# initialize guess value
+x <- -1
 
-For a refresher on Newton's method:  
-<https://en.wikibooks.org/wiki/Calculus/Newton%27s_Method>
+# while difference from root is greater than 0.1 keep going
+while (abs(x - 0) > 0.1) {
+  
+  # find the next value given your guess
+  x_n1 <- newtons_method_func(x)
+  
+  # store that value and continue
+  x <- x_n1
+  
+  # print x
+  print(x)
+  
+}
+```
 
 ## Problem 8
 
-In most of your classes, you will be concerned with "sums of squares" of various flavors.  SST = SSR + SSE for instance.  Sums of square total (SST) = sums of square regression (SSR) + sums of square error (SSE).  In this problem, we want to compare use of a for loop to using matrix operations in calculating these sums of squares.  We will use data simulated using:
-
-```{r sim_data, eval=FALSE, echo=TRUE, include=TRUE}
+The matrix operations are much quicker.
+```{r calc_SST}
+# simulated data
 X <- cbind(rep(1,100),rep.int(1:10,time=10))
+
+# create vectore beta
 beta <- c(4,5)
+
+# create random vector y
 y <- X%*%beta + rnorm(100)
+
+# create mean vector
+y_bar <- mean(y)
+
+
+# initialize values for loop
+sum2 <- 0
+sum <- 0
+
+# initialize mean matrix
+y_bar_vector <- rep(y_bar,100)
+
+# compare finding SST, not sure if theres a better way to wrap the for loop
+comparision_table <- microbenchmark(loop = for (i in 1:100) {
+  sum <- (y[i] - y_bar)^2
+  sum2 <- sum2 + sum
+}
+, matrix_op = colSums((y- y_bar_vector)^2))
+
+# plot chart
+autoplot(comparision_table)
+
+# print table
+knitr::kable(head(comparision_table))
 ```
-
-Without going too far into the Linear Regression material, we want to calculate SST = $$\Sigma_{i=1}^{100} (y_i - \bar{y})^2$$
-
-Please calculate this using:
-
-a. accumulating values in a for loop  
-b. matrix operations only
-
-Note, you can precalculate mean(y) and create any vectors you need, ie perhaps a vector of 1 (ones).  In both cases, wrap the calculation in the microbenchmark function.  Report the final number and timings.  
-
-## Problem 9
-
-Finish this homework by pushing your changes to your repo.
-
-**Only submit the .Rmd and .pdf solution files.  Names should be formatted HW3_pid.Rmd and HW3_pid.pdf**
