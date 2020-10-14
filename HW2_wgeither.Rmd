@@ -27,6 +27,7 @@ url <- "http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/Sensory.dat"
 #sensory_data <- fread(url, fill=TRUE, header=TRUE)
 #saveRDS(sensory_data, "sensory_data_raw.RDS")
 sensory_df <- readRDS("sensory_data_raw.RDS")
+
 ```
 
 First we'll clean it using base R.
