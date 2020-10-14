@@ -22,61 +22,55 @@ library(data.table)
 library(tidyverse)
 ```
 
-For each assignment, turn in by the due date/time.  Late assignments must be arranged prior to submission.  In every case, assignments are to be typed neatly using proper English in Markdown.  
-
-The last couple of weeks, we spoke about vector/matrix operations in R, discussed how the apply family of functions can assist in row/column operations, and how parallel computing in R is enabled.  Combining this with previous topics, we can write functions using our Good Programming Practices style and adhere to Reproducible Research principles to create fully functional, redable and reproducible code based analysis in R.  In this homework, we will put this all together and actually analyze some data.  Remember to adhere to both Reproducible Research and Good Programming Practices, ie describe what you are doing and comment/indent code where necessary.  
-
-
-
-R Vector/matrix manipulations and math, speed considerations
-R's Apply family of functions
-Parallel computing in R, foreach and dopar
-
-## Problem 2: Using the dual nature to our advantage
-
-Sometimes using a mixture of true matrix math plus component operations cleans up our code giving better readibility.  Suppose we wanted to form the following computation:
-
-\begin{itemize}
-    \item $while(abs(\Theta_0^{i}-\Theta_0^{i-1}) \text{ AND } abs(\Theta_1^{i}-\Theta_1^{i-1}) > tolerance) \text{ \{ }$
-    \begin{eqnarray*}
-        \Theta_0^i &=& \Theta_0^{i-1} - \alpha\frac{1}{m}\sum_{i=1}^{m} (h_0(x_i) -y_i)  \\
-        \Theta_1^i &=& \Theta_1^{i-1} - \alpha\frac{1}{m}\sum_{i=1}^{m} ((h_0(x_i) -y_i)x_i) 
-    \end{eqnarray*}
-    $\text{ \} }$
-\end{itemize}
-
-Where $h_0(x) = \Theta_0 + \Theta_1x$.  
-
-Given $\mathbf{X}$ and $\vec{h}$ below, implement the above algorithm and compare the results with lm(h~0+$\mathbf{X}$).  State the tolerance used and the step size, $\alpha$.
-
+## Problem 2
 ```{r eval=F, echo=T, include=T}
-    set.seed(1256)
-    theta <- as.matrix(c(1,2),nrow=2)
-    X <- cbind(1,rep(1:10,10))
-    h <- X%*%theta+rnorm(100,0,0.2)
+set.seed(1256)
+theta <- as.matrix(c(1,2),nrow=2)
+X <- cbind(1,rep(1:10,10))
+h <- X%*%theta+rnorm(100,0,0.2)
+
+# solve for Y
+Y <- X%*%solve((t(X)%*%X))%*%t(X)
+
+# lm model
+lm_theta0 <- lm(h~0+X)$coefficients[1]
+
+lm_theta1 <- lm(h~0+X)$coefficients[2]
+
+# implement
+for(i in 1:100){
+theta_0 <- theta[1,1] - 0.05*(1/i)*(h[i] - Y[i])
+
+theta_1 <- theta[2,1] - 0.05*(1/i)*((h[i] - Y[i])%*%X[i])
+}
+
+# create dataframe with results
+results <- data.frame(theta_0 = c(lm_theta0, theta_0)
+                      , theta_1 = c(lm_theta1, theta_1))
+
+# add rownames
+rownames(results) <- c("lm", "loop")
+
+# print table
+knitr::kable(results)
 ```
 
 
 ## Problem 3
 
-The above algorithm is called Gradient Descent.  This algorithm, like Newton's method, has "hyperparameters" that are determined outside the algorithm and there are no set rules for determing what settings to use.  For gradient descent, you need to set a start value, a step size and tolerance.  
+### Part a. 
 
-### Part a. Using a step size of $1e^{-7}$ and tolerance of $1e^{-9}$, try 10000 different combinations of start values for $\beta_0$ and $\beta_1$ across the range of possible $\beta$'s +/-1 from true determined in Problem 2, making sure to take advantages of parallel computing opportunities.  In my try at this, I found starting close to true took 1.1M iterations, so set a stopping rule for 5M.  Report the min and max number of iterations along with the starting values for those cases.  Also report the average and stdev obtained across all 10000 $\beta$'s.
+### Part b. 
 
-### Part b. What if you were to change the stopping rule to include our knowledge of the true value?  Is this a good way to run this algorithm?  What is a potential problem?
-
-### Part c. What are your thoughts on this algorithm?
+### Part c.
 
 
-## Problem 4: Inverting matrices
+## Problem 4
 
-Ok, so John Cook makes some good points, but if you want to do:
-
-\begin{equation*}
-\hat\beta = (X'X)^{-1}X'\underline{y}
-\end{equation*}
-
-what are you to do??  Can you explain what is going on?
+You just need to transpose and invert the X matrices like so
+```{r inverting matrix}
+#beta <- X%*%solve((t(X)%*%X))%*%t(X)
+```
 
 ## Problem 5: Need for speed challenge
 
@@ -103,25 +97,30 @@ Where A, B, p, q and r are formed by:
     C<-NULL #save some memory space
 ```
 
+Part a.) 
+
+It takes way too long to calculate Y
 ```{r}
 # get size of A & B
 size_of_a <- object.size(A)
-size_of_a <- object.size(B)
+size_of_b <- object.size(B)
 
+# print sizes
+print(paste0("size of A: ", size_of_a))
+print(paste0("size of B: ", size_of_b))
+
+# would not terminate so commenting out
 #microbenchmark(y = p + (A%*%inv(B)) %*% (q - r))
-
-#solve(B)
 ```
-Part a.
-
-How large (bytes) are A and B?  Without any optimization tricks, how long does the it take to calculate y?  
 
 Part b.
 
-How would you break apart this compute, i.e., what order of operations would make sense?  Are there any mathmatical simplifications you can make?  Is there anything about the vectors or matrices we might take advantage of?
+Take the inverse of B first, then find q - r, then multiple A by B's inverse, then multiple by q-r and finally add p
 
 Part c.
 
+```{r}
+```
 Use ANY means (ANY package, ANY trick, etc) necessary to compute the above, fast.  Wrap your code in "system.time({})", everything you do past assignment "C <- NULL".
 
 ## Problem 3  
@@ -202,7 +201,7 @@ plot_function <- function(df,title="title", x_lab="x-axis", y_lab="y-axis"){
 plot_function(hw3_data_df, "x vs. y", "x-axis", "y-axis")
 
 # plot each one by observer
-sapply(split(hw3_data_df, "Observer"), plot_function)
+#gapply(hw3_data_df, "Observer", plot_function)
 
 # did not get apply function to work 
 #ggplot(hw3_data_df, aes(x=x,y=y)) + geom_point() + facet_wrap(Observer~.)
@@ -479,6 +478,7 @@ system.time(sapply(long_vector, newtons_method_func))
 
 ### Part b.  
 
+Parallel is much faster.
 ```{r}
 # set cores
 cores <- detectCores() - 1
@@ -493,14 +493,6 @@ system.time(parSapply(c1,long_vector, newtons_method_func))
 stopCluster(c1)
 ```
 
-makeCluster(8)`.
-
-Create a table summarizing the roots and timing from both parts a and b.  What are your thoughts?
-
-
-
-
-## Problem 9
 
 Finish this homework by pushing your changes to your repo.
 
