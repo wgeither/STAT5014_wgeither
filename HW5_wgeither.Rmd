@@ -1,0 +1,97 @@
+---
+title: "HW5_wgeither"
+author: "Warren Geither"
+date: "11/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For each assignment, turn in by the due date/time.  Late assignments must be arranged prior to submission.  In every case, assignments are to be typed neatly using proper English in Markdown.  
+
+This week, we spoke about Exploratory Data Analysis and plotting. To begin the homework, we will as usual, start by loading, munging and  creating tidy data sets.  In this homework, our goal is to create informative (and perhaps pretty) plots showing features or perhaps deficiencies in the data.
+
+## Problem 3
+
+Using tidy concepts, get and clean the following data on education from the World Bank.
+
+<http://databank.worldbank.org/data/download/Edstats_csv.zip>
+
+How many data points were there in the complete dataset?  In your cleaned dataset?
+
+Choosing 2 countries, create a summary table of indicators for comparison.
+
+```{r}
+library(tidyverse)
+
+# load data
+bank_df <- read.csv2("Edstats_csv/EdStatsData.csv")
+footnotes_df <- read.csv2("Edstats_csv/EdStatsFootNote.csv")
+
+head(footnotes_df)
+# create column names
+col_names <- c("Country Name"
+                ,"Country Code"
+                ,"Indicator Name"
+                ,"Indicator Code"
+                , seq(1977, 2020, by = 1)
+                , seq(2025, 2100, by = 5))
+footnotes_col_names <- c("CountryCode","SeriesCode","Year","Description")
+
+# seperate data into new columns
+sep_df <- separate(bank_df, 1, into = col_names, sep = ",")
+new_df <- separate(footnotes_df, 1, into = footnotes_col_names, sep = ",")
+head(new_df)
+# random sample some rows to check out
+rs <- sample(1:nrow(sep_df), 100)
+
+# get columns that need fixin
+test_df <- sep_df[,5:64]
+
+# create a vector of the year columns
+years <- as.character(c(seq(1977, 2020, by = 1)
+                        , seq(2025, 2100, by = 5)))
+
+# consolidate those values into 1 column
+new_df <- test_df %>% gather(key="Year"
+                              , value=years) 
+
+# bind together with previous df
+fixed_df <- cbind(sep_df[1:4], new_df)
+
+# fix column names
+colnames(fixed_df) <- c("Country_name"
+                        , "Country_code"
+                        , "Indicator_name"
+                        , "Indicator_code"
+                        , "Year"
+                        , "Value")
+
+head(fixed_df)
+
+fixed_df[rs,]
+
+test_df <- fixed_df
+
+
+fixed_df[fixed_df$Value %in% footnotes_df$SeriesCode, c("Indicator_code", "Value")] <- df[fixed_df$Value %in% footnotes_df$SeriesCode, c("Value", "Indicator_code")] 
+```
+Problems with data:
+- Country code and indicator name switched( has rep in country code)
+- indicator name and indicator code switched
+- Indicator code and 1977 swithced
+## Problem 4
+
+Using *base* plotting functions, create a single figure that is composed of the first two rows of plots from SAS's simple linear regression diagnostics as shown here: <https://support.sas.com/rnd/app/ODSGraphics/examples/reg.html>.  Demonstrate the plot using suitable data from problem 3.
+
+## Problem 5
+
+Recreate the plot in problem 3 using ggplot2 functions.  Note: there are many extension libraries for ggplot, you will probably find an extension to the ggplot2 functionality will do exactly what you want.
+
+## Problem 6
+
+Finish this homework by pushing your changes to your repo.
+
+**Only submit the .Rmd and .pdf solution files.  Names should be formatted HW5_lastname_firstname.Rmd and HW5_lastname_firstname.pdf**
