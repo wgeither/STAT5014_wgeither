@@ -7,30 +7,22 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(data.table)
 ```
-
-For each assignment, turn in by the due date/time.  Late assignments must be arranged prior to submission.  In every case, assignments are to be typed neatly using proper English in Markdown.  
-
-This week, we spoke about Exploratory Data Analysis and plotting. To begin the homework, we will as usual, start by loading, munging and  creating tidy data sets.  In this homework, our goal is to create informative (and perhaps pretty) plots showing features or perhaps deficiencies in the data.
 
 ## Problem 3
 
-Using tidy concepts, get and clean the following data on education from the World Bank.
-
-<http://databank.worldbank.org/data/download/Edstats_csv.zip>
-
 How many data points were there in the complete dataset?  In your cleaned dataset?
+- original: 886,930 X 70
+- clean: 4,825,021 X 6
 
-Choosing 2 countries, create a summary table of indicators for comparison.
-
-```{r}
-library(tidyverse)
-
+```{r problem_3}
 # load data
-bank_df <- read.csv2("Edstats_csv/EdStatsData.csv")
-footnotes_df <- read.csv2("Edstats_csv/EdStatsFootNote.csv")
+#bank_data <- fread("Edstats_csv/EdStatsData.csv", header=TRUE)
+#saveRDS(bank_data, "bank_data_raw.RDS")
+bank_df <- readRDS("bank_data_raw.RDS")
 
-head(footnotes_df)
 # create column names
 col_names <- c("Country Name"
                 ,"Country Code"
@@ -38,56 +30,165 @@ col_names <- c("Country Name"
                 ,"Indicator Code"
                 , seq(1977, 2020, by = 1)
                 , seq(2025, 2100, by = 5))
-footnotes_col_names <- c("CountryCode","SeriesCode","Year","Description")
-
-# seperate data into new columns
-sep_df <- separate(bank_df, 1, into = col_names, sep = ",")
-new_df <- separate(footnotes_df, 1, into = footnotes_col_names, sep = ",")
-head(new_df)
-# random sample some rows to check out
-rs <- sample(1:nrow(sep_df), 100)
 
 # get columns that need fixin
-test_df <- sep_df[,5:64]
+years_columns <- bank_df[,5:64]
 
 # create a vector of the year columns
 years <- as.character(c(seq(1977, 2020, by = 1)
                         , seq(2025, 2100, by = 5)))
 
 # consolidate those values into 1 column
-new_df <- test_df %>% gather(key="Year"
+years_fixed <- years_columns %>% gather(key="Year"
                               , value=years) 
 
+# remove na values
+test_df <- years_fixed[complete.cases(years_fixed), ]
+
 # bind together with previous df
-fixed_df <- cbind(sep_df[1:4], new_df)
+fixed_df <- cbind(bank_df[,1:4], test_df)
 
 # fix column names
-colnames(fixed_df) <- c("Country_name"
-                        , "Country_code"
-                        , "Indicator_name"
-                        , "Indicator_code"
+colnames(fixed_df) <- c("Country_Name"
+                        , "Country_Code"
+                        , "Indicator_Name"
+                        , "Indicator_Code"
                         , "Year"
                         , "Value")
 
-head(fixed_df)
+# pick 2 countries and an indicator
+small_df <- fixed_df %>% filter(Country_Name == "India" | Country_Name == "France") %>%
+                         filter(Indicator_Code == "LO.LLECE.MAT6.1.MA")
 
-fixed_df[rs,]
+# apply summary to each country
+sum_table <- tapply(small_df$Value, small_df$Country_Code, summary)
 
-test_df <- fixed_df
+# couldnt get knitr to work with array so making values from sum_table into df
+sum_table1 <- data.frame(Min = c(0,20.3), Q1 = c(0.5,66.6)
+                         , Median = c(5.3,58312)
+                         , Mean = c(91594.9, 441691.4)
+                         , Q3 = c(39.6, 173272.0)
+                         , Max = c(549509.0,1976786.0))
 
+# fix rownames
+rownames(sum_table1) <- c("France", "India")
 
-fixed_df[fixed_df$Value %in% footnotes_df$SeriesCode, c("Indicator_code", "Value")] <- df[fixed_df$Value %in% footnotes_df$SeriesCode, c("Value", "Indicator_code")] 
+# print pretty table
+knitr::kable(sum_table1)
 ```
-Problems with data:
-- Country code and indicator name switched( has rep in country code)
-- indicator name and indicator code switched
-- Indicator code and 1977 swithced
+
+
 ## Problem 4
 
-Using *base* plotting functions, create a single figure that is composed of the first two rows of plots from SAS's simple linear regression diagnostics as shown here: <https://support.sas.com/rnd/app/ODSGraphics/examples/reg.html>.  Demonstrate the plot using suitable data from problem 3.
+```{r}
+# look at more data
+test_df <- fixed_df %>% filter(Indicator_Code == "LO.LLECE.MAT6.1.MA")
+
+# remove outliers
+testtest_df <- test_df %>% filter(Value < 40000)
+
+# model
+lmfit <- lm(Value~Year, data = testtest_df)
+
+# studentized residuals
+studentized <- rstandard(lmfit)
+
+# calculate leverage
+leverage <- lm.influence(lmfit)$hat
+
+# set plot matrix
+par(mfrow = c(3,3))
+
+# residual plot
+plot(x = fitted(lmfit)
+     , y = residuals(lmfit)
+     , xlab = "Predicted Value"
+     , ylab = "Residuals")
+
+# studenttized residuals
+plot(x = fitted(lmfit)
+     , y = studentized
+     , xlab = "Predicted Values"
+     , ylab = "RStudent")
+
+# studentized residuals vs leverage
+plot(studentized
+     , leverage
+     , xlab = "Leverage"
+     , ylab = "RStudent")
+
+# residual QQ plot
+qqnorm(lmfit$res
+       , xlab = "Quantile"
+       , ylab = "Residual")
+qqline(lmfit$res)
+
+# weight vs prediced
+plot(x = fitted(lmfit)
+     , y = testtest_df$Value
+     , xlab = "Predicted Value"
+     , ylab = "Value")
+
+# cooks distance
+plot(x = testtest_df$Year
+     , y = cooks.distance(lmfit)
+     , xlab = "Year"
+     , ylab = "Cook's D")
+
+mtext("Fit Diagnostics for Value", side = 3, line = -2, outer = TRUE)
+```
 
 ## Problem 5
 
+```{r}
+library(ggpubr)
+# residual plot
+g1 <- ggplot(testtest_df
+       , aes(x = fitted(lmfit), y = residuals(lmfit))) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  xlab("Predicted Value") +
+  ylab("Residuals")
+
+# studenttized residuals
+g2 <- ggplot(testtest_df
+       , aes(x = fitted(lmfit), y = studentized)) + 
+  geom_point() +
+  xlab("Predicted Value") +
+  ylab("RStudent")
+
+# studentized residuals vs leverage
+g3 <- ggplot(testtest_df
+       , aes(x = studentized, y = leverage)) + 
+  geom_point() +
+  xlab("Leverage") +
+  ylab("RStudent")
+
+# residual QQ plot
+g4 <- ggplot(lmfit, aes(sample=residuals(lmfit)))+
+  stat_qq() +
+  stat_qq_line() +
+  xlab("Quantile") +
+  ylab("Residual")
+
+# weight vs prediced
+g5 <- ggplot(testtest_df
+       , aes(x = fitted(lmfit), y = Value)) + 
+  geom_point() +
+  xlab("Predicted Value") +
+  ylab("Value")
+
+# cooks distance
+g6 <- ggplot(testtest_df
+       , aes(x = Year, y = cooks.distance(lmfit))) + 
+  geom_point() +
+  xlab("Year") +
+  ylab("Cook's D")
+
+# arrange on same page
+ggarrange(g1, g2, g3, g4, g5, g6,
+          ncol = 3, nrow = 3)
+```
 Recreate the plot in problem 3 using ggplot2 functions.  Note: there are many extension libraries for ggplot, you will probably find an extension to the ggplot2 functionality will do exactly what you want.
 
 ## Problem 6
