@@ -52,7 +52,7 @@ a) I got my undergrad in mathematics with a minor in stats, so I had a fair amou
 data = Orange
 
 # check out the data to see what we can plot
-print(data)
+knitr::kable(summary(data))
 
 # Read about the dataset
 # ?Orange
